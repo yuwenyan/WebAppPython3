@@ -185,6 +185,49 @@ class Model(dict, metaclass=ModelMetaclass):
         rows = yield from execute(self.__delete__, args)
         if rows !=1
             logging.warn('fialed to remove by primary key: affected rows: %s' % rows)
+            
+    @classmethod
+    @asyncio.coroutine
+    def findAll(cls, where=None, args=None, **kw):
+        ' find objects by where clause. '
+        sql = [cls.__select__]
+        if where:
+            sql.append('where')
+            sql.append(where)
+        if args is None:
+            args = []
+        orderBy = kw.get('orderBy', None)
+        if orderBy:
+            sql.append('order by')
+            sql.append(orderBy)
+        limit = kw.get('limit', None)
+        if limit is not None:
+            sql.append('limit')
+            if isinstance(limit, int):
+                sql.append('?')
+                args.append(limit)
+            elif isinstance(limit, tuple) and len(limit) == 2:
+                sql.append('?,?')
+                args.extend(limit)
+            else:
+                raise ValueError('Invalid limit value: %s' % str(limit))
+        rs = yield from select(' '.join(sql), args)
+        return [cls(**r) for r in rs]
+        
+    @classmethod
+    @asyncio.coroutine
+    def findNumber(cls, selectField, where=None, args=None):
+        ' find number by select and where. '
+        sql = ['select %s _num_ from `%s`' % (selectField, cls.__table__) ]
+        if where:
+            sql.append('where')
+            sql.append(while)
+        rs = yield from select(' '.join(sql), args, 1)
+        if len(rs) == 0:
+            return None
+        return rs[0]['_num_']
+    
+                
 
 
 
