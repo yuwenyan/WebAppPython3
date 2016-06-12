@@ -2,7 +2,7 @@ import asyncio, logging
 
 import aiomysql
 
-@syncio.coroutine
+@asyncio.coroutine
 def create_pool(loop, **kw):
     logging.info('create database connection pool...')
     global __pool
@@ -52,6 +52,12 @@ def execute(sql, args): #Insert(), Update() and Delete()
 
 # ORM#############################################################
 
+def create_args_string(num):
+    L = []
+    for n in range(num):
+        L.append('?')
+    return ', '.join(L)
+
 class Field(object):
     
     def __init__(self, name, column_type, primary_key, default):
@@ -75,7 +81,7 @@ class IntegerField(Field):
         
 class FloatField(Field):
 
-    def __init__(self, name=None, primary_key=False, defualr=0.0):
+    def __init__(self, name=None, primary_key=False, default=0.0):
         super().__init__(name, 'real', primary_key, default)
 
 class BooleanField(Field):
@@ -102,8 +108,8 @@ class ModelMetaclass(type):
         fields = []
         primaryKey = None
         for k, v in attrs.items():
-            if isinstance(v, field):
-                logging.info('    found mapping: %s ==> %s' 5 (k, v))
+            if isinstance(v, Field):
+                logging.info('    found mapping: %s ==> %s' % (k, v))
                 mappings[k] = v
                 if v.primary_key:
                     if primaryKey:
@@ -123,7 +129,7 @@ class ModelMetaclass(type):
         
         attrs['__select__'] = 'select `%s`, %s from `%s`' % (primaryKey, ', '.join(escaped_fields), tableName)
         attrs['__insert__'] = 'insert into `%s` (%s, `%s`) values (%s)' % (tableName, ', '.join(escaped_fields), primaryKey, create_args_string(len(escaped_fields)+1))
-        attrs['__update__'] = 'update `%s` set %s where `%s`=?' % (tableName, ', '.join(map(lambda f: '`%s`=?' % (mappings.get(f).name of f), fields)), primaryKey)
+        attrs['__update__'] = 'update `%s` set %s where `%s`=?' % (tableName, ', '.join(map(lambda f: '`%s`=?' % (mappings.get(f).name or f), fields)), primaryKey)
         attrs['__delete__'] = 'delete from `%s` where `%s`=?' % (tableName, primaryKey)
         return type.__new__(cls, name, bases, attrs)
         
@@ -183,7 +189,7 @@ class Model(dict, metaclass=ModelMetaclass):
     def remove(self):
         args = [self.getValue(self.__primary_key__)]
         rows = yield from execute(self.__delete__, args)
-        if rows !=1
+        if rows != 1:
             logging.warn('fialed to remove by primary key: affected rows: %s' % rows)
             
     @classmethod
@@ -221,7 +227,7 @@ class Model(dict, metaclass=ModelMetaclass):
         sql = ['select %s _num_ from `%s`' % (selectField, cls.__table__) ]
         if where:
             sql.append('where')
-            sql.append(while)
+            sql.append(where)
         rs = yield from select(' '.join(sql), args, 1)
         if len(rs) == 0:
             return None
