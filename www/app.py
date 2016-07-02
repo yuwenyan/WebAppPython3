@@ -17,7 +17,7 @@ def init_jinja2(app, **kw):
         block_end_string = kw.get('block_end_string', '%}'),
         variable_start_string = kw.get('variable_start_string', '{{'),
         variable_end_string = kw.get('variable_end_string', '}}'),
-        atuo_reload = kw.get('auto_reload', True)
+        auto_reload = kw.get('auto_reload', True)
     )
     path = kw.get('path', None)
     if path is None:
@@ -28,7 +28,7 @@ def init_jinja2(app, **kw):
     if filters is not None:
         for name, f in filters.items():
             env.filters[name] = f
-    app['__templateing__'] = env
+    app['__templating__'] = env
 
 # middleware
 @asyncio.coroutine
@@ -36,7 +36,7 @@ def logger_factory(app, handler):
     @asyncio.coroutine
     def logger(request):
         logging.info('Request: %s %s' % (request.method, request.path))
-        yield from asyncio.sleep(0.3)
+        # yield from asyncio.sleep(0.3)
         return (yield from handler(request))
     return logger
 

@@ -1,4 +1,4 @@
-import asyncio, os, inspect, functools
+import asyncio, os, inspect, logging, functools
 
 from urllib import parse
 
